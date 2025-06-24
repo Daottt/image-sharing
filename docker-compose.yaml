@@ -1,0 +1,38 @@
+
+services:
+    db:
+        image: postgres:16.0
+        container_name: postgres_db
+        restart: always
+        ports:
+          - "5432:5432"
+        environment:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: db
+        volumes:
+          - postgres_db:/var/lib/postgresql/data
+        healthcheck:
+          test: [ "CMD-SHELL", "pg_isready -U postgres -d db" ]
+          interval: 10s
+          timeout: 5s
+          retries: 5
+          start_period: 10s
+
+    app:
+        build: .
+        container_name: app
+        restart: unless-stopped
+        ports:
+          - "8080:8080"
+        depends_on:
+          db:
+            condition: service_healthy
+        environment:
+          DATABASE_URL: "postgresql://postgres:password@db:5432/db?sslmode=disable"
+          ADDRESS : "0.0.0.0:8080"
+        volumes:
+          - app_data:/app/data
+
+volumes:
+  postgres_db:
+  app_data:
