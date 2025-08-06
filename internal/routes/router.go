@@ -9,15 +9,18 @@ import (
 
 	"image-sharing/internal/configs"
 	"image-sharing/internal/db/gen"
+	"image-sharing/internal/metrics"
 	midle "image-sharing/internal/middleware"
 	"image-sharing/internal/repository"
 )
 
 func SetupRouter(dbConnetcion *sql.DB, config configs.Config) *chi.Mux {
 	router := chi.NewRouter()
+	metrics := metrics.New()
 	router.Use(middleware.Logger)
 	router.Use(middleware.StripSlashes)
 	router.Use(middleware.Recoverer)
+	router.Use(metrics.Middleware())
 
 	querys := db.New(dbConnetcion)
 
@@ -33,6 +36,8 @@ func SetupRouter(dbConnetcion *sql.DB, config configs.Config) *chi.Mux {
 
 	postRepository := repository.NewPostRepository(dbConnetcion, querys, config.ImagesDirectory)
 	postRoute := NewPostRoute(postRepository)
+
+	router.Get("/metrics", metrics.Handler().ServeHTTP)
 
 	router.Route("/user", func(r chi.Router) {
 		r.Group(func(r chi.Router) {

@@ -14,12 +14,10 @@ import (
 	"image-sharing/internal/routes"
 )
 
-const envPath = "../../.env"
-
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
-	err := godotenv.Load(envPath)
+	err := godotenv.Load(".env")
 	if err != nil {
 		slog.Debug(".env file not found")
 	}
@@ -51,9 +49,11 @@ func main() {
 
 	router := routes.SetupRouter(db, config)
 
+	router.Mount("/debug/pprof", http.DefaultServeMux)
+
 	slog.Info(fmt.Sprintf("Server started on: http://%s", config.Address))
 	err = http.ListenAndServe(config.Address, router)
 	if err != nil {
-		slog.Error("Failed to start server", slog.Any("err", err))
+		panic(err)
 	}
 }
