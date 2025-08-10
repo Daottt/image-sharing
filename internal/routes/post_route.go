@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,10 +10,11 @@ import (
 	"net/http"
 	"strconv"
 
-	db "image-sharing/internal/db/gen"
-	"image-sharing/internal/repository"
-
 	"github.com/go-chi/chi/v5"
+
+	db "image-sharing/internal/db/gen"
+	"image-sharing/internal/middleware"
+	"image-sharing/internal/repository"
 )
 
 const maxUploadSize = 500 << 20
@@ -202,4 +204,12 @@ func isAllowedFileFormat(file multipart.File) (string, error) {
 		return "", errors.New("not allowed file format")
 	}
 	return format, nil
+}
+
+func CheckClaims(ctx context.Context) (middleware.AccessClaims, error) {
+	claims, ok := ctx.Value(middleware.AuthKey{}).(middleware.AccessClaims)
+	if !ok {
+		return middleware.AccessClaims{}, errors.New("invalid claims")
+	}
+	return claims, nil
 }
