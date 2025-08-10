@@ -1,20 +1,16 @@
 package configs
 
 import (
-	"fmt"
-	"log/slog"
 	"os"
 )
 
 type Config struct {
 	DatabaseURL     string
 	Address         string
-	SecretKey       string
+	SSOAddress      string
 	ImagesDirectory string
 	SchemaPath      string
 }
-
-const minSecretKeySize = 32
 
 func NewConfig() (config Config) {
 	config.DatabaseURL = os.Getenv("DATABASE_URL")
@@ -25,10 +21,9 @@ func NewConfig() (config Config) {
 	if config.Address == "" {
 		config.Address = "localhost:8080"
 	}
-	config.SecretKey = os.Getenv("SECRET_KEY")
-	if config.SecretKey == "" || len(config.SecretKey) < minSecretKeySize {
-		config.SecretKey = "01234567890123456789012345678901"
-		slog.Error(fmt.Sprintf("SECRET_KEY must be at least %d characters. Using default secret key", minSecretKeySize))
+	config.SSOAddress = os.Getenv("SSO_ADDRESS")
+	if config.SSOAddress == "" {
+		config.SSOAddress = "localhost:8081"
 	}
 	config.ImagesDirectory = os.Getenv("IMAGES_DIRECTORY")
 	if config.ImagesDirectory == "" {
@@ -36,7 +31,7 @@ func NewConfig() (config Config) {
 	}
 	config.SchemaPath = os.Getenv("SCHEMA_PATH")
 	if config.SchemaPath == "" {
-		config.SchemaPath = "../../internal/db/schema.sql"
+		config.SchemaPath = "../internal/db/schema.sql"
 	}
 	return config
 }

@@ -5,13 +5,15 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"image-sharing/pkg/token"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"image-sharing/internal/configs"
 	"image-sharing/internal/db/gen"
 	"image-sharing/internal/metrics"
 	midle "image-sharing/internal/middleware"
 	"image-sharing/internal/repository"
+	ssov1 "image-sharing/protos/gen"
 )
 
 func SetupRouter(dbConnetcion *sql.DB, config configs.Config) *chi.Mux {
@@ -24,39 +26,17 @@ func SetupRouter(dbConnetcion *sql.DB, config configs.Config) *chi.Mux {
 
 	querys := db.New(dbConnetcion)
 
-	tokenMaker := token.NewJWTMaker(config.SecretKey)
-
-	authMiddleware := midle.GetAuthMiddleware(tokenMaker)
-
-	authRepository := repository.NewAuthRepository(dbConnetcion, querys)
-	authRoute := NewAuthRoute(authRepository, tokenMaker)
-
-	uerRepository := repository.NewUserRepository(dbConnetcion, querys)
-	userRoute := NewUserRoute(uerRepository)
+	con, err := grpc.NewClient(config.SSOAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		panic(err)
+	}
+	authClient := ssov1.NewAuthClient(con)
+	authMiddleware := midle.GetAuthMiddleware(authClient)
 
 	postRepository := repository.NewPostRepository(dbConnetcion, querys, config.ImagesDirectory)
 	postRoute := NewPostRoute(postRepository)
 
 	router.Get("/metrics", metrics.Handler().ServeHTTP)
-
-	router.Route("/user", func(r chi.Router) {
-		r.Group(func(r chi.Router) {
-			r.Get("/{id}", userRoute.GetUser)
-			r.Post("/", userRoute.CreateUser)
-			r.Post("/login", authRoute.LoginUser)
-		})
-		r.Group(func(r chi.Router) {
-			r.Use(authMiddleware)
-			r.Put("/{id}", userRoute.UpdateUser)
-			r.Delete("/{id}", userRoute.DeleteUser)
-			r.Post("/logout", authRoute.LogoutUser)
-		})
-	})
-
-	router.Route("/token", func(r chi.Router) {
-		r.Post("/renew", authRoute.RenewAccessToken)
-		r.With(authMiddleware).Post("/revoke", authRoute.RevokeSessions)
-	})
 
 	router.Route("/post", func(r chi.Router) {
 		r.Group(func(r chi.Router) {

@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+option go_package = "sso.v1;ssov1";
+
+service Auth {
+    rpc Register(RegisterRequest) returns (RegisterRespons);
+    rpc Login(LoginRequest) returns (LoginRespons);
+    rpc Logout(TokenRequest) returns (LogoutRespons);
+    rpc RenewAccessToken (RenewRequest) returns (RenewResponse);
+    rpc RevokeSession (TokenRequest) returns (RevokeResponse);
+    rpc GetAuthorization(TokenRequest) returns (AuthorizationResponse);
+}
+
+message RegisterRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message RegisterRespons {
+    int32 user_id = 1;
+}
+
+message LoginRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message LoginRespons {
+    string session_id = 1;
+    string access_token = 2;
+    string refresh_token = 3;
+    string access_token_expires_at = 4;
+    string refresh_token_expires_at = 5;
+    string login = 6;
+}
+
+message TokenRequest {
+    string access_token = 1;
+}
+
+message LogoutRespons {
+}
+
+message RenewRequest {
+    string renew_token = 1;
+}
+
+message RenewResponse {
+    string access_token = 1;
+    string access_token_expires_at = 2;
+}
+
+message RevokeRequest {
+    string login = 1;
+}
+
+message RevokeResponse {
+}
+
+message AuthorizationResponse {
+    int32 id = 1;
+    string login = 2;
+    bool is_admin =3;
+}
+
+service User {
+    rpc Get(IDRequst) returns (UserResponse);
+    rpc Update (UpdateRequest) returns (UpdateResponse);
+    rpc Delete (DeleteRequest) returns (DeleteResponse);
+}
+
+message IDRequst {
+    int32 id =1;
+}
+
+message UpdateRequest {
+    string access_token =1;
+    int32 id = 2;
+    string name =3;
+    string description =4;
+}
+
+message UserResponse {
+    int32 id =1;
+    string name =2;
+    string description =3;
+}
+
+message DeleteRequest {
+    string access_token =1;
+    int32 id = 2;
+}
+
+message UpdateResponse{}
+
+message DeleteResponse{}

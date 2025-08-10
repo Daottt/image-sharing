@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"io"
 	"mime/multipart"
 	"os"
@@ -11,6 +12,8 @@ import (
 	"github.com/google/uuid"
 	"image-sharing/internal/db/gen"
 )
+
+var ErrNotFound = errors.New("not found")
 
 type PostRepository interface {
 	GetPostByID(ctx context.Context, id int) (db.GetPostRow, error)
